@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoEasy WebSocket 测试</title>
+    <!-- <script src="https://cdn.goeasy.io/goeasy-1.0.3.js"></script> -->
+    <script type="text/javascript" src="https://cdn.goeasy.io/goeasy-2.13.11.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #messages { border: 1px solid #ccc; height: 200px; overflow-y: auto; padding: 10px; margin-top: 10px; }
+        input, button { margin-top: 5px; padding: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2>GoEasy WebSocket 测试工具</h2>
+
+    <div>
+        <input type="text" id="messageInput" placeholder="输入消息">
+        <button onclick="sendMessage()">发送</button>
+    </div>
+
+    <h3>消息：</h3>
+    <div id="messages"></div>
+
+    
+    <script type="text/javascript">
+         //初始化GoEasy对象
+        let goEasy = GoEasy.getInstance({
+            host:'hangzhou.goeasy.io', //新加坡host：singapore.goeasy.io
+            appkey: "BC-276179062c73494984f06adb31a10f39", //替换为您的应用appkey
+            modules: ['pubsub']
+        });
+         //建立连接
+        goEasy.connect({
+            onSuccess: function () { //连接成功
+                console.log("GoEasy connect successfully.") //连接成功
+            },
+            onFailed: function (error) { //连接失败
+                console.log("Failed to connect GoEasy, code:"+error.code+ ",error:"+error.content);
+            }
+        });
+        //订阅消息
+        goEasy.pubsub.subscribe({
+            channel: "test_channel",//替换为您自己的channel
+            onMessage: function (message) { //收到消息
+                console.log("收到消息：" + message.content);
+                var messagesDiv = document.getElementById("messages");
+                var newMessage = document.createElement("div");
+                newMessage.innerText = "收到消息：" + message.content;
+                messagesDiv.appendChild(newMessage);
+            },
+            onSuccess: function () {
+                console.log("Channel订阅成功。");
+            },
+            onFailed: function (error) {
+                console.log("Channel订阅失败, 错误编码：" + error.code + " 错误信息：" + error.content)
+            }
+        });
+
+        function sendMessage() {
+            var messageInput = document.getElementById("messageInput");
+            var message = messageInput.value;
+            //发送
+            goEasy.pubsub.publish({
+                channel: "test_channel",//替换为您自己的channel
+                message: message,//替换为您想要发送的消息内容
+                onSuccess:function(){
+                    console.log("消息发送成功！");
+                    var messagesDiv = document.getElementById("messages");
+                    var newMessage = document.createElement("div");
+                    newMessage.innerText = "发送消息：" + message;
+                    messagesDiv.appendChild(newMessage);
+                    messageInput.value = "";
+                },
+                onFailed: function (error) {
+                    console.log("消息发送失败，错误编码："+error.code+" 错误信息："+error.content);
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
