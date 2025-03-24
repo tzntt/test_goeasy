@@ -40,7 +40,25 @@
                 document.getElementById("currentNickname").innerText = nickname;
                 document.getElementById("nicknameInputContainer").style.display = "none";
                 document.getElementById("chatContainer").style.display = "block";
+
+                // 广播某某已加入聊天
+                let joinMessage = nickname + " 已加入聊天";
+                goEasy.pubsub.publish({
+                    channel: "test_channel",
+                    message: joinMessage,
+                    onSuccess: function () {
+                        let messagesDiv = document.getElementById("messages");
+                        let newMessage = document.createElement("div");
+                        newMessage.innerText = joinMessage;
+                        messagesDiv.appendChild(newMessage);
+                    },
+                    onFailed: function (error) {
+                        console.log("消息发送失败，错误编码：" + error.code + " 错误信息：" + error.content);
+                    }
+                });
             }
+
+            
         }
         
         let goEasy = GoEasy.getInstance({
