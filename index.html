@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GoEasy WebSocket 测试</title>
-    <!-- <script src="https://cdn.goeasy.io/goeasy-1.0.3.js"></script> -->
     <script type="text/javascript" src="https://cdn.goeasy.io/goeasy-2.13.11.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
@@ -16,66 +15,87 @@
 
     <h2>GoEasy WebSocket 测试工具</h2>
 
-    <div>
-        <input type="text" id="messageInput" placeholder="输入消息">
-        <button onclick="sendMessage()">发送</button>
+    <div id="nicknameInputContainer">
+        <input type="text" id="nicknameInput" placeholder="输入你的昵称">
+        <button onclick="setNickname()">确定</button>
     </div>
 
-    <h3>消息：</h3>
-    <div id="messages"></div>
+    <div id="chatContainer" style="display: none;">
+        <h3>当前用户: <span id="currentNickname"></span></h3>
+        <div>
+            <input type="text" id="messageInput" placeholder="输入消息">
+            <button onclick="sendMessage()">发送</button>
+        </div>
+        <h3>消息：</h3>
+        <div id="messages"></div>
+    </div>
 
-    
     <script type="text/javascript">
-         //初始化GoEasy对象
+        let nickname = "";
+        
+        function setNickname() {
+            let input = document.getElementById("nicknameInput").value.trim();
+            if (input) {
+                nickname = input;
+                document.getElementById("currentNickname").innerText = nickname;
+                document.getElementById("nicknameInputContainer").style.display = "none";
+                document.getElementById("chatContainer").style.display = "block";
+            }
+        }
+        
         let goEasy = GoEasy.getInstance({
-            host:'hangzhou.goeasy.io', //新加坡host：singapore.goeasy.io
-            appkey: "BC-276179062c73494984f06adb31a10f39", //替换为您的应用appkey
+            host: 'hangzhou.goeasy.io',
+            appkey: "BC-276179062c73494984f06adb31a10f39",
             modules: ['pubsub']
         });
-         //建立连接
+
         goEasy.connect({
-            onSuccess: function () { //连接成功
-                console.log("GoEasy connect successfully.") //连接成功
+            onSuccess: function () {
+                console.log("GoEasy connect successfully.");
             },
-            onFailed: function (error) { //连接失败
-                console.log("Failed to connect GoEasy, code:"+error.code+ ",error:"+error.content);
+            onFailed: function (error) {
+                console.log("Failed to connect GoEasy, code:" + error.code + ", error:" + error.content);
             }
         });
-        //订阅消息
+
         goEasy.pubsub.subscribe({
-            channel: "test_channel",//替换为您自己的channel
-            onMessage: function (message) { //收到消息
-                console.log("收到消息：" + message.content);
-                var messagesDiv = document.getElementById("messages");
-                var newMessage = document.createElement("div");
-                newMessage.innerText = "收到消息：" + message.content;
+            channel: "test_channel",
+            onMessage: function (message) {
+                let messagesDiv = document.getElementById("messages");
+                if (message.content.startsWith(nickname + ":")) {
+                    return; // 忽略自己发送的消息
+                }
+                let newMessage = document.createElement("div");
+                newMessage.innerText = message.content;
                 messagesDiv.appendChild(newMessage);
             },
             onSuccess: function () {
                 console.log("Channel订阅成功。");
             },
             onFailed: function (error) {
-                console.log("Channel订阅失败, 错误编码：" + error.code + " 错误信息：" + error.content)
+                console.log("Channel订阅失败, 错误编码：" + error.code + " 错误信息：" + error.content);
             }
         });
 
         function sendMessage() {
-            var messageInput = document.getElementById("messageInput");
-            var message = messageInput.value;
-            //发送
+            let messageInput = document.getElementById("messageInput");
+            let message = messageInput.value;
+            if (!nickname) {
+                alert("请先输入昵称");
+                return;
+            }
             goEasy.pubsub.publish({
-                channel: "test_channel",//替换为您自己的channel
-                message: message,//替换为您想要发送的消息内容
-                onSuccess:function(){
-                    console.log("消息发送成功！");
-                    var messagesDiv = document.getElementById("messages");
-                    var newMessage = document.createElement("div");
-                    newMessage.innerText = "发送消息：" + message;
+                channel: "test_channel",
+                message: nickname + ": " + message,
+                onSuccess: function () {
+                    let messagesDiv = document.getElementById("messages");
+                    let newMessage = document.createElement("div");
+                    newMessage.innerText = "我: " + message;
                     messagesDiv.appendChild(newMessage);
                     messageInput.value = "";
                 },
                 onFailed: function (error) {
-                    console.log("消息发送失败，错误编码："+error.code+" 错误信息："+error.content);
+                    console.log("消息发送失败，错误编码：" + error.code + " 错误信息：" + error.content);
                 }
             });
         }
